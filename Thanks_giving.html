@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Our Space</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Jost:wght@300;400;500;600&family=Caveat:wght@400;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --champ:#F7E7A9;--champ-dim:#e8d47d;--champ-pale:#fffaed;
+  --grey:#6E6E6E;--grey-dark:#3a3a3a;--grey-light:#9a9a9a;
+  --grey-bg:#2b2b2b;--grey-card:#1e1e1e;--line:rgba(247,231,169,0.15);
+  /* love theme */
+  --rose:#ff6b8a;--rose-dim:#e0486a;--rose-pale:#fff0f3;
+  --blush:#ffd6df;--deep:#1a0a0e;--mauve:#2d1420;
+  --lavender:#c084fc;--gold:#f59e0b;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;overflow:hidden;font-family:'Jost',sans-serif;}
+
+/* ═══════════════════════════════
+   SCREENS  – only one visible at a time
+═══════════════════════════════ */
+.screen{
+  position:fixed;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;
+  transition:opacity 0.55s ease;
+  overflow:hidden;
+}
+.screen.active{opacity:1;pointer-events:all;}
+
+/* ═══════════════════════════════
+   LOADER SCREEN
+═══════════════════════════════ */
+#s-loader{background:#161616;z-index:100;flex-direction:column;}
+#s-loader.active{opacity:1;pointer-events:all;}
+.hg-wrap{width:48px;height:48px;animation:hgspin 2.2s linear infinite;}
+@keyframes hgspin{to{transform:rotate(360deg);}}
+.loader-bar{margin-top:32px;width:160px;height:2px;background:rgba(247,231,169,0.1);border-radius:2px;overflow:hidden;}
+.loader-bar::after{content:'';display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--champ-dim),var(--champ));animation:barFill 2.2s cubic-bezier(0.4,0,0.2,1) forwards;}
+@keyframes barFill{to{width:100%;}}
+.loader-label{margin-top:16px;font-family:'Playfair Display',serif;font-style:italic;font-size:13px;color:rgba(247,231,169,0.42);letter-spacing:3px;}
+
+/* ═══════════════════════════════
+   LOGIN SCREEN
+═══════════════════════════════ */
+#s-login{background:#222;}
+.login-bg{position:absolute;inset:0;
+  background:radial-gradient(ellipse 80% 60% at 15% 110%,rgba(247,231,169,0.07) 0%,transparent 60%),
+             radial-gradient(ellipse 60% 50% at 90% -5%,rgba(247,231,169,0.05) 0%,transparent 55%),#222;}
+.login-bg::before{content:'';position:absolute;inset:0;
+  background-image:repeating-linear-gradient(-55deg,rgba(247,231,169,0.025) 0px,rgba(247,231,169,0.025) 1px,transparent 1px,transparent 60px);}
+.card{
+  position:relative;z-index:2;
+  width:min(500px,94vw);background:var(--grey-card);
+  border:1px solid rgba(247,231,169,0.12);border-radius:3px;
+  padding:50px 46px 46px;
+  box-shadow:0 50px 120px rgba(0,0,0,0.65);
+  transform:translateY(22px);transition:transform 0.5s ease;
+}
+.card.mounted{transform:translateY(0);}
+.card::before{content:'';position:absolute;top:0;left:46px;right:46px;height:2px;
+  background:linear-gradient(90deg,transparent,var(--champ) 40%,var(--champ-dim) 60%,transparent);}
+.card-eyebrow{font-size:10px;font-weight:500;letter-spacing:5px;text-transform:uppercase;color:var(--grey);margin-bottom:10px;}
+.card-title{font-family:'Playfair Display',serif;font-size:32px;font-weight:700;color:var(--champ);line-height:1.15;margin-bottom:38px;}
+.card-title em{font-style:italic;font-weight:400;}
+.form-row{display:flex;align-items:center;gap:16px;padding:16px 0;border-bottom:1px solid var(--line);min-height:58px;}
+.form-row:first-of-type{border-top:1px solid var(--line);}
+.row-label{font-size:12px;font-weight:400;letter-spacing:0.3px;color:var(--grey-light);flex-shrink:0;width:120px;}
+.row-ctrl{flex:1;position:relative;display:flex;align-items:center;}
+.sel-wrap{position:relative;display:inline-flex;align-items:center;}
+.sel-wrap select{appearance:none;-webkit-appearance:none;background:transparent;border:none;outline:none;font-family:'Playfair Display',serif;font-size:17px;color:var(--champ);cursor:pointer;padding-right:26px;min-width:150px;}
+.sel-wrap select option{background:#1e1e1e;color:#F7E7A9;font-family:'Jost',sans-serif;font-size:14px;}
+.sel-wrap select option[value=""]{color:#777;}
+.sel-arrow{position:absolute;right:0;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--champ-dim);font-size:11px;}
+.row-ctrl input[type="text"]{background:transparent;border:none;border-bottom:1px solid rgba(247,231,169,0.22);outline:none;width:100%;font-family:'Playfair Display',serif;font-size:17px;color:var(--champ);padding:4px 0;transition:border-color 0.2s;}
+.row-ctrl input::placeholder{color:rgba(247,231,169,0.25);}
+.row-ctrl input:focus{border-color:var(--champ);}
+.cond{display:none;}
+.cond.show{display:flex;animation:rowIn 0.35s ease;}
+@keyframes rowIn{from{opacity:0;transform:translateX(-10px);}to{opacity:1;transform:translateX(0);}}
+.enter-btn{margin-top:34px;display:flex;align-items:center;justify-content:space-between;width:100%;padding:17px 22px;background:var(--champ);border:none;border-radius:2px;cursor:pointer;font-family:'Jost',sans-serif;font-size:11px;font-weight:500;letter-spacing:4.5px;text-transform:uppercase;color:var(--grey-dark);position:relative;overflow:hidden;transition:background 0.25s,transform 0.18s,box-shadow 0.25s;}
+.enter-btn::after{content:'';position:absolute;inset:0;background:rgba(255,255,255,0.22);transform:translateX(-110%) skewX(-18deg);transition:transform 0.55s ease;}
+.enter-btn:hover::after{transform:translateX(110%) skewX(-18deg);}
+.enter-btn:hover{background:var(--champ-pale);transform:translateY(-2px);box-shadow:0 10px 40px rgba(247,231,169,0.18);}
+.enter-btn:active{transform:translateY(0);}
+.btn-txt,.btn-arr{position:relative;z-index:1;}
+.btn-arr{font-size:18px;font-weight:300;transition:transform 0.25s;}
+.enter-btn:hover .btn-arr{transform:translateX(5px);}
+#toast{position:fixed;bottom:34px;left:50%;transform:translateX(-50%);background:#1a1a1a;border:1px solid rgba(247,231,169,0.28);border-radius:2px;padding:12px 28px;color:var(--champ-dim);font-family:'Jost',sans-serif;font-size:11px;letter-spacing:2px;z-index:300;display:none;box-shadow:0 8px 32px rgba(0,0,0,0.45);}
+
+/* ═══════════════════════════════
+   EMOJI RAIN  (love screens)
+═══════════════════════════════ */
+#emoji-rain{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;}
+.er{position:absolute;top:-60px;font-size:22px;animation:efall linear infinite;user-select:none;}
+@keyframes efall{
+  0%  {transform:translateY(0) rotate(0deg);  opacity:0;}
+  5%  {opacity:1;}
+  95% {opacity:0.7;}
+  100%{transform:translateY(110vh) rotate(360deg);opacity:0;}
+}
+
+/* ═══════════════════════════════
+   LOVE THEME BASE  (pages 1-5)
+═══════════════════════════════ */
+.love-screen{
+  background:radial-gradient(ellipse 90% 70% at 50% 0%,#3d0d1f,#1a0a0e 70%);
+  flex-direction:column;
+  padding:0;
+}
+.love-screen .page-inner{
+  position:relative;z-index:2;
+  width:min(640px,96vw);
+  max-height:92vh;
+  overflow-y:auto;
+  scrollbar-width:none;
+}
+.love-screen .page-inner::-webkit-scrollbar{display:none;}
+
+/* page card glass */
+.pcard{
+  background:rgba(45,20,32,0.72);
+  backdrop-filter:blur(18px);
+  border:1px solid rgba(255,107,138,0.22);
+  border-radius:16px;
+  padding:44px 40px 40px;
+  box-shadow:0 30px 80px rgba(0,0,0,0.5),0 0 0 1px rgba(255,107,138,0.06) inset;
+  position:relative;
+}
+.pcard::before{content:'';position:absolute;top:0;left:40px;right:40px;height:2px;
+  background:linear-gradient(90deg,transparent,var(--rose) 40%,var(--rose-dim) 60%,transparent);}
+
+/* nav dots */
+.nav-dots{display:flex;gap:8px;justify-content:center;margin-top:22px;position:relative;z-index:2;}
+.dot{width:8px;height:8px;border-radius:50%;background:rgba(255,107,138,0.3);cursor:pointer;transition:all 0.3s;}
+.dot.active{background:var(--rose);box-shadow:0 0 10px var(--rose);transform:scale(1.3);}
+
+/* page nav buttons */
+.page-nav{display:flex;justify-content:space-between;align-items:center;margin-top:28px;position:relative;z-index:2;}
+.nav-btn{
+  padding:12px 28px;border:1px solid rgba(255,107,138,0.4);border-radius:30px;
+  background:rgba(255,107,138,0.1);color:var(--rose);
+  font-family:'Jost',sans-serif;font-size:11px;font-weight:500;letter-spacing:3px;text-transform:uppercase;
+  cursor:pointer;transition:all 0.3s;
+}
+.nav-btn:hover{background:rgba(255,107,138,0.25);border-color:var(--rose);box-shadow:0 0 20px rgba(255,107,138,0.2);}
+.nav-btn:disabled{opacity:0.2;cursor:default;}
+.page-counter{font-family:'Caveat',cursive;font-size:18px;color:rgba(255,107,138,0.6);}
+
+/* typography for love pages */
+.p-eyebrow{font-size:10px;font-weight:500;letter-spacing:5px;text-transform:uppercase;color:rgba(255,107,138,0.6);margin-bottom:12px;}
+.p-title{font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:#ffd6df;line-height:1.2;margin-bottom:6px;}
+.p-title em{font-style:italic;color:var(--rose);}
+.p-sub{font-family:'Caveat',cursive;font-size:19px;color:rgba(255,180,200,0.7);margin-bottom:24px;}
+.p-divider{height:1px;background:linear-gradient(90deg,transparent,rgba(255,107,138,0.3),transparent);margin:20px 0;}
+.p-body{font-family:'Jost',sans-serif;font-size:15px;font-weight:300;color:rgba(255,214,223,0.8);line-height:1.85;}
+.p-body strong{color:var(--rose);font-weight:500;}
+.p-highlight{
+  margin:20px 0;padding:18px 22px;
+  background:rgba(255,107,138,0.08);
+  border-left:3px solid var(--rose);border-radius:0 10px 10px 0;
+  font-family:'Caveat',cursive;font-size:20px;color:var(--blush);
+}
+.trio-cards{display:flex;gap:14px;margin:20px 0;flex-wrap:wrap;}
+.trio-card{
+  flex:1;min-width:130px;padding:18px 16px;text-align:center;
+  background:rgba(255,107,138,0.08);border:1px solid rgba(255,107,138,0.2);border-radius:12px;
+}
+.trio-card .tc-emoji{font-size:28px;margin-bottom:8px;}
+.trio-card .tc-name{font-family:'Playfair Display',serif;font-size:15px;color:var(--blush);margin-bottom:4px;}
+.trio-card .tc-role{font-family:'Caveat',cursive;font-size:14px;color:rgba(255,107,138,0.7);}
+.mem-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:20px 0;}
+.mem-item{padding:14px;background:rgba(255,107,138,0.06);border:1px solid rgba(255,107,138,0.15);border-radius:10px;}
+.mem-item .mi-emoji{font-size:20px;margin-bottom:6px;}
+.mem-item .mi-title{font-family:'Caveat',cursive;font-size:17px;color:var(--blush);margin-bottom:4px;}
+.mem-item .mi-desc{font-size:12px;color:rgba(255,180,200,0.6);line-height:1.6;}
+.quote-box{
+  margin:18px 0;padding:20px 24px;text-align:center;
+  background:rgba(192,132,252,0.08);border:1px solid rgba(192,132,252,0.2);border-radius:12px;
+}
+.quote-box .qtext{font-family:'Playfair Display',serif;font-style:italic;font-size:17px;color:#e9d5ff;line-height:1.6;}
+.quote-box .qwho{font-family:'Caveat',cursive;font-size:14px;color:rgba(192,132,252,0.6);margin-top:8px;}
+/* goodbye arc styles */
+.farewell-banner{text-align:center;padding:22px;margin:16px 0;background:linear-gradient(135deg,rgba(255,107,138,0.1),rgba(192,132,252,0.1));border-radius:14px;border:1px solid rgba(255,107,138,0.18);}
+.farewell-banner .fb-big{font-family:'Playfair Display',serif;font-size:36px;color:var(--rose);}
+.farewell-banner .fb-small{font-family:'Caveat',cursive;font-size:18px;color:rgba(255,180,200,0.7);margin-top:6px;}
+.pill-list{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0;}
+.pill{padding:8px 18px;background:rgba(255,107,138,0.1);border:1px solid rgba(255,107,138,0.25);border-radius:30px;font-family:'Caveat',cursive;font-size:16px;color:var(--blush);}
+.timeline{margin:16px 0;}
+.tl-item{display:flex;gap:14px;margin-bottom:14px;align-items:flex-start;}
+.tl-dot{width:10px;height:10px;border-radius:50%;background:var(--rose);flex-shrink:0;margin-top:5px;box-shadow:0 0 8px var(--rose);}
+.tl-content .tl-title{font-family:'Caveat',cursive;font-size:17px;color:var(--blush);}
+.tl-content .tl-desc{font-size:12px;color:rgba(255,180,200,0.6);margin-top:2px;line-height:1.6;}
+</style>
+</head>
+<body>
+
+<!-- ═══ EMOJI RAIN ═══ -->
+<div id="emoji-rain"></div>
+
+<!-- ═══ LOADER ═══ -->
+<div class="screen active" id="s-loader">
+  <svg class="hg-wrap" viewBox="0 0 48 48" fill="none">
+    <line x1="10" y1="6" x2="38" y2="6" stroke="#F7E7A9" stroke-width="2" stroke-linecap="round"/>
+    <line x1="10" y1="42" x2="38" y2="42" stroke="#F7E7A9" stroke-width="2" stroke-linecap="round"/>
+    <path d="M12 7C12 7 12 20 24 26C36 20 36 7 36 7Z" fill="rgba(247,231,169,0.12)" stroke="#F7E7A9" stroke-width="1.5" stroke-linejoin="round"/>
+    <path d="M12 41C12 41 12 28 24 22C36 28 36 41 36 41Z" fill="rgba(247,231,169,0.06)" stroke="#F7E7A9" stroke-width="1.5" stroke-linejoin="round"/>
+    <circle cx="24" cy="26" r="2.2" fill="#F7E7A9" opacity="0.85">
+      <animate attributeName="cy" values="20;30;20" dur="1.6s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.85;0.2;0.85" dur="1.6s" repeatCount="indefinite"/>
+    </circle>
+  </svg>
+  <div class="loader-bar"></div>
+  <div class="loader-label">identifying…</div>
+</div>
+
+<!-- ═══ LOGIN SCREEN ═══ -->
+<div class="screen" id="s-login">
+  <div class="login-bg"></div>
+  <div class="card" id="login-card">
+    <div class="card-eyebrow">Access Portal</div>
+    <div class="card-title">Who are<br/><em>you?</em></div>
+
+    <div class="form-row">
+      <div class="row-label">I am a</div>
+      <div class="row-ctrl">
+        <div class="sel-wrap">
+          <select id="role-sel" onchange="onRole(this)">
+            <option value="">— select —</option>
+            <option value="friend">Friend</option>
+            <option value="teacher">Teacher</option>
+          </select>
+          <span class="sel-arrow">▾</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-row cond" id="row-name">
+      <div class="row-label">My name</div>
+      <div class="row-ctrl">
+        <input type="text" id="friend-name" placeholder="enter your name"/>
+      </div>
+    </div>
+    <div class="form-row cond" id="row-gender">
+      <div class="row-label">Gender</div>
+      <div class="row-ctrl">
+        <div class="sel-wrap">
+          <select id="gender-sel">
+            <option value="">— select —</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+          </select>
+          <span class="sel-arrow">▾</span>
+        </div>
+      </div>
+    </div>
+    <div class="form-row cond" id="row-subject">
+      <div class="row-label">My subject</div>
+      <div class="row-ctrl">
+        <div class="sel-wrap">
+          <select id="subject-sel">
+            <option value="">— select —</option>
+            <option value="Tamil">Tamil</option>
+            <option value="Maths">Maths</option>
+            <option value="Computer">Computer</option>
+          </select>
+          <span class="sel-arrow">▾</span>
+        </div>
+      </div>
+    </div>
+
+    <button class="enter-btn" onclick="handleEnter()">
+      <span class="btn-txt">Enter</span>
+      <span class="btn-arr">→</span>
+    </button>
+  </div>
+</div>
+
+<!-- ═══ PAGES 1-5  (injected dynamically) ═══ -->
+<div class="screen love-screen" id="s-p1">
+  <div class="page-inner" id="pi1"></div>
+</div>
+<div class="screen love-screen" id="s-p2">
+  <div class="page-inner" id="pi2"></div>
+</div>
+<div class="screen love-screen" id="s-p3">
+  <div class="page-inner" id="pi3"></div>
+</div>
+<div class="screen love-screen" id="s-p4">
+  <div class="page-inner" id="pi4"></div>
+</div>
+<div class="screen love-screen" id="s-p5">
+  <div class="page-inner" id="pi5"></div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ══════════════════════════════════════
+   EMOJI RAIN
+══════════════════════════════════════ */
+const TRIO_EMOJIS   = ['❤️','🔥','😂','😎','🤡','💀','🎭','🍛','🎯','💯','🤝','🫵','😤','🏏','🎬'];
+const FRIEND_EMOJIS = ['💌','🌸','✨','🌙','💫','🌷','🎀','🫶','💝','🌻','🍃','🌈','⭐','💐','🫂'];
+let rainInterval = null;
+
+function startRain(emojis){
+  const box = document.getElementById('emoji-rain');
+  box.innerHTML = '';
+  if(rainInterval) clearInterval(rainInterval);
+  function drop(){
+    const el = document.createElement('div');
+    el.className = 'er';
+    el.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+    el.style.left  = Math.random()*100+'%';
+    el.style.animationDuration = (5+Math.random()*7)+'s';
+    el.style.animationDelay   = (Math.random()*2)+'s';
+    el.style.fontSize = (14+Math.random()*16)+'px';
+    box.appendChild(el);
+    setTimeout(()=>el.remove(), 14000);
+  }
+  for(let i=0;i<22;i++) setTimeout(drop, i*180);
+  rainInterval = setInterval(drop, 600);
+}
+
+/* ══════════════════════════════════════
+   SCREEN SWITCHING
+══════════════════════════════════════ */
+let currentScreen = 's-loader';
+function goTo(id){
+  document.getElementById(currentScreen).classList.remove('active');
+  document.getElementById(id).classList.add('active');
+  currentScreen = id;
+}
+
+/* ══════════════════════════════════════
+   LOADER → LOGIN
+══════════════════════════════════════ */
+setTimeout(()=>{
+  goTo('s-login');
+  setTimeout(()=>document.getElementById('login-card').classList.add('mounted'),50);
+},2500);
+
+/* ══════════════════════════════════════
+   LOGIN LOGIC
+══════════════════════════════════════ */
+function onRole(sel){
+  ['row-name','row-gender','row-subject'].forEach(id=>document.getElementById(id).classList.remove('show'));
+  document.getElementById('friend-name').value='';
+  document.getElementById('gender-sel').value='';
+  document.getElementById('subject-sel').value='';
+  if(sel.value==='friend'){ show('row-name'); show('row-gender'); }
+  if(sel.value==='teacher'){ show('row-subject'); }
+}
+function show(id){document.getElementById(id).classList.add('show');}
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.style.display='block';
+  clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',2600);
+}
+
+function handleEnter(){
+  const role = document.getElementById('role-sel').value;
+  if(!role){toast('Please select who you are');return;}
+  if(role==='friend'){
+    const name   = document.getElementById('friend-name').value.trim();
+    const gender = document.getElementById('gender-sel').value;
+    if(!name)  {toast('Please enter your name');return;}
+    if(!gender){toast('Please select your gender');return;}
+
+    const key = name.toLowerCase();
+    const isTrio = (key==='abdul'||key==='aravind');
+    buildPages(name, gender, isTrio);
+    startRain(isTrio ? TRIO_EMOJIS : FRIEND_EMOJIS);
+    goTo('s-p1');
+    updateDots(1);
+  } else {
+    toast('Teacher pages coming soon! 🎓');
+  }
+}
+
+/* ══════════════════════════════════════
+   PAGE BUILDER
+══════════════════════════════════════ */
+let totalPages = 5;
+let currentPage = 1;
+
+function nav(dir){
+  const next = currentPage + dir;
+  if(next<1||next>totalPages)return;
+  goTo('s-p'+next);
+  currentPage=next;
+  updateDots(next);
+}
+function updateDots(p){
+  document.querySelectorAll('.dot').forEach((d,i)=>{
+    d.classList.toggle('active',i+1===p);
+  });
+}
+
+function navBar(page){
+  return `
+  <div class="page-nav">
+    <button class="nav-btn" onclick="nav(-1)" ${page===1?'disabled':''}>← Back</button>
+    <span class="page-counter">${page} / 5</span>
+    <button class="nav-btn" onclick="nav(1)" ${page===5?'disabled':''}>Next →</button>
+  </div>
+  <div class="nav-dots">
+    ${[1,2,3,4,5].map(i=>`<div class="dot ${i===page?'active':''}" onclick="nav(${i-page})"></div>`).join('')}
+  </div>`;
+}
+
+function buildPages(name, gender, isTrio){
+  if(isTrio) buildTrioPages(name);
+  else       buildFriendPages(name, gender);
+}
+
+/* ══════════════════════════════════════
+   TRIO PAGES  (Abdul / Aravind)
+══════════════════════════════════════ */
+function buildTrioPages(name){
+
+  /* PAGE 1 – The Trio Introduction */
+  document.getElementById('pi1').innerHTML = `
+  <div class="pcard">
+    <div class="p-eyebrow">Chapter One</div>
+    <div class="p-title">The <em>Unholy Trinity</em></div>
+    <div class="p-sub">Three idiots. One unforgettable story.</div>
+    <div class="p-divider"></div>
+    <div class="trio-cards">
+      <div class="trio-card">
+        <div class="tc-emoji">😎</div>
+        <div class="tc-name">Karuppasamy</div>
+        <div class="tc-role">The Play Boy</div>
+      </div>
+      <div class="trio-card">
+        <div class="tc-emoji">🔥</div>
+        <div class="tc-name">Abdul</div>
+        <div class="tc-role">The Roaster</div>
+      </div>
+      <div class="trio-card">
+        <div class="tc-emoji">😂</div>
+        <div class="tc-name">Aravind</div>
+        <div class="tc-role">The Laughter</div>
+      </div>
+    </div>
+    <div class="p-highlight">
+      Every school has that one gang that the whole class secretly wishes they were in. We were that gang. 💯
+    </div>
+    <div class="p-body">
+      Fate dropped three completely different human beings into the same bench, the same canteen queue, the same madness — and somehow, against all classroom logic, it <strong>just worked.</strong> No rulebook, no script. Just three guys who decided chaos was more fun together.
+    </div>
+  </div>
+  ${navBar(1)}`;
+
+  /* PAGE 2 – School Memories */
+  document.getElementById('pi2').innerHTML = `
+  <div class="pcard">
+    <div class="p-eyebrow">Chapter Two</div>
+    <div class="p-title"><em>Golden</em> Classroom Sins</div>
+    <div class="p-sub">things we swore we'd never admit 🤫</div>
+    <div class="p-divider"></div>
+    <div class="mem-grid">
+      <div class="mem-item">
+        <div class="mi-emoji">📋</div>
+        <div class="mi-title">Last-Bench Nation</div>
+        <div class="mi-desc">The backbench wasn't a seat. It was a sovereign territory we governed with full authority.</div>
+      </div>
+      <div class="mem-item">
+        <div class="mi-emoji">📝</div>
+        <div class="mi-title">The Copy Chain</div>
+        <div class="mi-desc">Abdul copied from Aravind. Aravind copied from me. I copied from last year's guy. Circle of life.</div>
+      </div>
+      <div class="mem-item">
+        <div class="mi-emoji">🎭</div>
+        <div class="mi-title">Abdul's Roasts</div>
+        <div class="mi-desc">Man could reduce anyone to ashes in under 10 seconds. Teachers included. Legends say he's still undefeated.</div>
+      </div>
+      <div class="mem-item">
+        <div class="mi-emoji">💀</div>
+        <div class="mi-title">Aravind's Laugh</div>
+        <div class="mi-desc">One wheeze and the entire room collapsed. Period. Even during PT sir's most serious lecture.</div>
+      </div>
+    </div>
+    <div class="p-body">
+      Between three of us, we held the world record for most noise generated in a silent classroom, most creative excuses for incomplete homework, and most suspiciously synchronized "stomach aches" on exam days. 🏆
+    </div>
+  </div>
+  ${navBar(2)}`;
+
+  /* PAGE 3 – Lunch Time & Canteen */
+  document.getElementById('pi3').innerHTML = `
+  <div class="pcard">
+    <div class="p-eyebrow">Chapter Three</div>
+    <div class="p-title">The Sacred <em>Lunch Hour</em></div>
+    <div class="p-sub">when the canteen became our parliament 🍛</div>
+    <div class="p-divider"></div>
+    <div class="p-body">
+      The moment that bell rang, something ancient awakened in us. Three boys, one mission — reach the canteen before Class 10B did.
+    </div>
+    <div class="p-highlight">
+      Aravind laughed so hard once that his sambar went back into the bowl. We haven't discussed this since.
+    </div>
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-content">
+          <div class="tl-title">12:30 – The Sprint</div>
+          <div class="tl-desc">The second the bell ended, three different boys became one synchronized blur heading for the canteen door.</div>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-content">
+          <div class="tl-title">12:34 – Abdul's Negotiations</div>
+          <div class="tl-desc">Somehow he always got extra chutney. Nobody understands his methods. We've stopped asking.</div>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-content">
+          <div class="tl-title">12:38 – The Council Meeting</div>
+          <div class="tl-desc">Serious topics: whose crush looked at whom today, who's the actual class topper, life beyond 12th grade.</div>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-content">
+          <div class="tl-title">12:55 – The Walk Back</div>
+          <div class="tl-desc">Slower. Heavier. Ready to sleep through afternoon chemistry with our eyes open.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  ${navBar(3)}`;
+
+  /* PAGE 4 – Hangouts */
+  document.getElementById('pi4').innerHTML = `
+  <div class="pcard">
+    <div class="p-eyebrow">Chapter Four</div>
+    <div class="p-title">After <em>School Hours</em></div>
+    <div class="p-sub">the world was just our playground 🎯</div>
+    <div class="p-divider"></div>
+    <div class="p-body">
+      School ended at 4. Home? That was always negotiable. The real life happened in the sixty minutes between dismissal and when parents started calling.
+    </div>
+    <div class="pill-list">
+      <div class="pill">🏏 Cricket on the road</div>
+      <div class="pill">🛵 Random bike rides</div>
+      <div class="pill">🍦 Tea shop debates</div>
+      <div class="pill">🎮 One more game</div>
+      <div class="pill">📱 Meme wars at midnight</div>
+      <div class="pill">🌙 Terrace chats</div>
+    </div>
+    <div class="quote-box">
+      <div class="qtext">"Enna panna porom?" — "Teriyadhu, va poiduvom."</div>
+      <div class="qwho">— every single time, without fail</div>
+    </div>
+    <div class="p-body">
+      Nobody planned anything. But somehow every unplanned evening turned into a <strong>story worth telling.</strong> Abdul's running commentary, Aravind's unprompted laughter, three idiots going absolutely nowhere — and it being the best place in the world.
+    </div>
+  </div>
+  ${navBar(4)}`;
+
+  /* PAGE 5 – Bond Forever */
+  document.getElementById('pi5').innerHTML = `
+  <div class="pcard">
+    <div class="p-eyebrow">Chapter Five</div>
+    <div class="p-title">Not a <em>Goodbye</em></div>
+    <div class="p-sub">just a see-you-when-I-see-you 💫</div>
+    <div class="p-divider"></div>
+    <div class="farewell-banner">
+      <div class="fb-big">🔥 + 😂 + 😎</div>
+      <div class="fb-small">some trios don't break. they just spread out and burn brighter.</div>
+    </div>
+    <div class="p-body">
+      Roads split. Colleges change. Cities differ. But the <strong>three of us</strong> — one who roasts, one who laughs, one who plays — we don't need proximity to stay close. The jokes still land over chat. The mockery never retired. The memories live in every ordinary Tuesday that somehow felt extraordinary.
+    </div>
+    <div class="p-highlight">
+      Wherever life takes us — different classrooms, different careers, different cities — the bench in Row 5 will always have three names carved into it. 🪑
+    </div>
+    <div class="quote-box">
+      <div class="qtext">"Some friendships don't need daily calls to stay alive. They just need the three of you to exist on this earth at the same time."</div>
+      <div class="qwho">— for Abdul, Aravind & you</div>
+    </div>
+  </div>
+  ${navBar(5)}`;
+}
+
+/* ══════════════════════════════════════
+   GOODBYE ARC  (other friends)
+══════════════════════════════════════ */
+function buildFriendPages(name, gender){
+  const pr = gender==='Male' ? 'his' : 'her';
+  const they = gender==='Male' ? 'he' : 'she';
+
+  /* PAGE 1 */
+  document.getElementById('pi1').innerHTML = `
+  <div class="pcard">
+    <div class="p-eyebrow">A Letter, Unlocked</div>
+    <div class="p-title">So, <em>${name}</em> walked in.</div>
+    <div class="p-sub">and the school was never the same after that ✨</div>
+    <div class="p-divider"></div>
+    <div class="p-body">
+      Not every friendship announces itself with fanfare. Some just quietly sit next to you one ordinary morning, share half a geometry compass, and suddenly become <strong>the most important part of your school story.</strong> That's ${name}. No introduction needed after that.
+    </div>
+    <div class="p-highlight">
+      There's a kind of friend who shows up in your life without warning and leaves a warmth that outlasts every season. This page is for that friend.
+    </div>
+    <div class="p-body">
+      School corridors hold different energy when certain people walk through them. Yours was one of those presences — unhurried, genuine, unforgettable. The kind of person everyone remembers, even if they never quite say it aloud.
+    </div>
+  </div>
+  ${navBar(1)}`;
+
+  /* PAGE 2 */
+  document.getElementById('pi2').innerHTML = `
+  <div class="pcard">
+    <div class="p-eyebrow">The In-Between Hours</div>
+    <div class="p-title">All the <em>Small Things</em></div>
+    <div class="p-sub">that felt enormous at the time 🌸</div>
+    <div class="p-divider"></div>
+    <div class="mem-grid">
+      <div class="mem-item">
+        <div class="mi-emoji">📚</div>
+        <div class="mi-title">Shared Notes</div>
+        <div class="mi-desc">Margins full of doodles, borrowed pens, handwriting that somehow looked better on someone else's page.</div>
+      </div>
+      <div class="mem-item">
+        <div class="mi-emoji">🌧️</div>
+        <div class="mi-title">Rainy Lunch</div>
+        <div class="mi-desc">Rain trapping everyone inside meant the best unplanned conversations happened against classroom windows.</div>
+      </div>
+      <div class="mem-item">
+        <div class="mi-emoji">🎒</div>
+        <div class="mi-title">Walk to Gate</div>
+        <div class="mi-desc">That slow, reluctant walk out that somehow stretched a five-minute distance into a thirty-minute goodbye.</div>
+      </div>
+      <div class="mem-item">
+        <div class="mi-emoji">😶</div>
+        <div class="mi-title">The Shared Silence</div>
+        <div class="mi-desc">Sometimes not saying anything said everything. Sitting nearby was enough. No words necessary.</div>
+      </div>
+    </div>
+    <div class="p-body">
+      The small things were never small. They were the whole thing, dressed up as ordinary moments.
+    </div>
+  </div>
+  ${navBar(2)}`;
+
+  /* PAGE 3 */
+  document.getElementById('pi3').innerHTML = `
+  <div class="pcard">
+    <div class="p-eyebrow">Honest Chapter</div>
+    <div class="p-title">What Nobody <em>Admits</em></div>
+    <div class="p-sub">but everyone quietly carries 💌</div>
+    <div class="p-divider"></div>
+    <div class="p-body">
+      School friendships carry a particular weight — they form before we know how to protect ourselves, which means they go all the way in. <strong>${name}</strong> knew things about those years that even the closest family didn't. That's the nature of the hours spent together.
+    </div>
+    <div class="quote-box">
+      <div class="qtext">"There's a version of you that only exists in school corridors — freer, louder, less careful. ${name} knew that version."</div>
+      <div class="qwho">— something unspoken between school friends</div>
+    </div>
+    <div class="p-body">
+      The arguments that dissolved by lunch. The jokes that only landed between two specific people. The ability to communicate an entire mood with one look across a classroom. That language — built without effort over years — doesn't translate anywhere else. It stays exactly where it was formed.
+    </div>
+    <div class="p-highlight">
+      Some people hold chapters of you that you can't get back anywhere else. That's not loss. That's how meaningful it was. 🌷
+    </div>
+  </div>
+  ${navBar(3)}`;
+
+  /* PAGE 4 */
+  document.getElementById('pi4').innerHTML = `
+  <div class="pcard">
+    <div class="p-eyebrow">The Drift</div>
+    <div class="p-title">Roads That <em>Diverged</em></div>
+    <div class="p-sub">and why that's okay 🍃</div>
+    <div class="p-divider"></div>
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-content">
+          <div class="tl-title">Last day of school</div>
+          <div class="tl-desc">Signatures on shirts, promises to stay in touch, that hollow certainty that everything was about to rearrange.</div>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-content">
+          <div class="tl-title">First summer apart</div>
+          <div class="tl-desc">Messages still frequent. Calls still easy. The gap hadn't announced itself yet — it was still just a gap.</div>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-content">
+          <div class="tl-title">New colleges, new circles</div>
+          <div class="tl-desc">Life didn't stop — it just shifted lanes. Each person became someone slightly new in a different room.</div>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-content">
+          <div class="tl-title">Occasional check-ins</div>
+          <div class="tl-desc">Shorter texts. Longer intervals. But whenever they came — familiar. Warm. Unchanged underneath.</div>
+        </div>
+      </div>
+    </div>
+    <div class="p-body">
+      Drifting doesn't erase what was built. It just means the friendship was strong enough to survive distance without needing to be loud about it. <strong>${name}</strong> doesn't need to be close to matter.
+    </div>
+  </div>
+  ${navBar(4)}`;
+
+  /* PAGE 5 */
+  document.getElementById('pi5').innerHTML = `
+  <div class="pcard">
+    <div class="p-eyebrow">Farewell Arc</div>
+    <div class="p-title">Not Ending. <em>Resting.</em></div>
+    <div class="p-sub">some goodbyes are just pauses in disguise 💝</div>
+    <div class="p-divider"></div>
+    <div class="farewell-banner">
+      <div class="fb-big">✨ ${name} ✨</div>
+      <div class="fb-small">a name that belongs permanently in the school chapter of this story</div>
+    </div>
+    <div class="p-body">
+      The goodbye arc isn't about loss. It's about acknowledging that something real happened — that two people shared years, shared space, built something without trying — and that it <strong>mattered deeply.</strong>
+    </div>
+    <div class="pill-list">
+      <div class="pill">💫 the inside jokes</div>
+      <div class="pill">🌸 the shared lunches</div>
+      <div class="pill">📖 the borrowed notes</div>
+      <div class="pill">🌧️ the rainy windows</div>
+      <div class="pill">🎒 the slow walks home</div>
+      <div class="pill">💌 the unspoken things</div>
+    </div>
+    <div class="quote-box">
+      <div class="qtext">"School ends. The friendship doesn't. It just moves from the corridors into the quieter, permanent rooms of memory."</div>
+      <div class="qwho">— for ${name}, wherever the road leads</div>
+    </div>
+  </div>
+  ${navBar(5)}`;
+}
+</script>
+</body>
+</html>
